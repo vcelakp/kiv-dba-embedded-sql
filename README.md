@@ -6,6 +6,8 @@ It starts with basic C programs and database connection, then covers SQLCA, host
 
 All examples are small, focused, and based on a single table, so they can be used easily.
 
+
+
 ## Common example table: `ESQL_STUDENT`
 
 All examples use a single shared table:
@@ -25,6 +27,8 @@ The table should contain the following data:
 | 3          | Tomas     | Ostrava |       | needs topic  |
 | 4          | Jana      | Brno    | 2.7   |              |
 
+
+
 ## Build notes
 
 These examples are Pro*C source files (`.pc`), not plain C source files.
@@ -42,6 +46,12 @@ export ORA_USER=tomas
 export ORA_PASS=secret
 export ORA_DB=oracle.example.com:1521/STUDENTS
 ```
+
+## Install
+
+See [INSTALL.md](INSTALL.md) for setup instructions.
+
+
 
 ### Precompile and build
 
@@ -73,6 +83,7 @@ or use proc.cfg with that option:
 The ANSI Dynamic SQL Method 4 example may require additional Pro*C options, like `dynamic=ansi` and `type_code=ansi`. 
 
 
+
 ## Recommended order of examples
 
 - `00-c-empty-main`
@@ -94,6 +105,8 @@ The ANSI Dynamic SQL Method 4 example may require additional Pro*C options, like
 
 You can run the full example set using `playbook.sh`.
 
-The locking example (`12-c-locking-for-update`) waits for a keystroke. While it is running, try to acquire the same lock from another terminal by running the dedicated locking playbook script.
+The locking example (`12-c-locking-for-update`) waits for a keystroke. While it
+is running, try to acquire the same lock from another terminal by running the
+dedicated locking playbook script (`playbook-only-locking-example.sh`). 
 
 
