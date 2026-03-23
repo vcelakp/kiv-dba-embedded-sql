@@ -8,6 +8,12 @@ All examples are small, focused, and based on a single table, so they can be use
 
 
 
+## Install
+
+See [INSTALL.md](INSTALL.md) for setup instructions.
+
+
+
 ## Common example table: `ESQL_STUDENT`
 
 All examples use a single shared table:
@@ -46,10 +52,6 @@ export ORA_USER=tomas
 export ORA_PASS=secret
 export ORA_DB=oracle.example.com:1521/STUDENTS
 ```
-
-## Install
-
-See [INSTALL.md](INSTALL.md) for setup instructions.
 
 
 

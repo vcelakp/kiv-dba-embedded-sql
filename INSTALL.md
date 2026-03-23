@@ -6,11 +6,14 @@ This guide describes how to set up an environment for Oracle Embedded SQL develo
 
 ## 1. Download Oracle Instant Client packages
 
-Go to the Oracle Instant Client Downloads page and download the following ZIP packages for your platform, architecture, and Oracle version:
+Go to the [Oracle Instant Client
+Downloads](https://www.oracle.com/database/technologies/instant-client/downloads.html)
+page and download the following ZIP packages for your platform, architecture,
+and Oracle version:
 
-- **Basic Package (ZIP)** – required to run OCI, OCCI, and JDBC-OCI applications
-- **SDK Package (ZIP)** – header files and example makefiles for development
-- **Precompiler Package (ZIP)** – includes the `proc` precompiler
+- **Basic Package (ZIP)** required to run OCI, OCCI, and JDBC-OCI applications
+- **SDK Package (ZIP)** header files and example makefiles for development
+- **Precompiler Package (ZIP)** includes the `proc` precompiler
 
 All three ZIP files must match:
 
