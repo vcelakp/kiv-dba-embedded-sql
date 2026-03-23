@@ -1,2 +1,1 @@
-# kiv-dba-embedded-sql
-Database Applications: Embedded SQL Examples
+# Database Applications (KIV/DBA): Embedded SQL Examples
