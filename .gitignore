@@ -1,7 +1,9 @@
 
 build
+examples/cursors
 examples/*/*.lis
 ora_db
-ora_user
 ora_pass
+ora_user
 *.swp
+TODO/
