@@ -88,22 +88,22 @@ The ANSI Dynamic SQL Method 4 example may require additional Pro*C options, like
 
 ## Recommended order of examples
 
-- `00-c-empty-main`
-- `01-c-hello-world`
-- `02-c-oracle-connection-hardcoded`
-- `03-c-oracle-connection-env`
-- `04-c-sqlca-and-error-handling-minimal`
-- `05-c-varchar-and-indicator`
-- `06-c-static-dml`
-- `07-c-cursor-fetch-explicit`
-- `08-c-cursor-whenever-not-found`
-- `09-c-cursor-current-of`
-- `10-c-plsql-anonymous-block`
-- `11-c-transaction-savepoint-rollback`
-- `12-c-locking-for-update`
-- `13-c-dynamic-sql-method1`
-- `14-c-dynamic-sql-method2`
-- `15-c-dynamic-sql-method3`
+- [`00-c-empty-main`](examples/00-c-empty-main/main.pc)
+- [`01-c-hello-world`](examples/01-c-hello-world/main.pc)
+- [`02-c-oracle-connection-hardcoded`](examples/02-c-oracle-connection-hardcoded/main.pc)
+- [`03-c-oracle-connection-env`](examples/03-c-oracle-connection-env/main.pc)
+- [`04-c-sqlca-and-error-handling-minimal`](examples/04-c-sqlca-and-error-handling-minimal/main.pc)
+- [`05-c-varchar-and-indicator`](examples/05-c-varchar-and-indicator/main.pc)
+- [`06-c-static-dml`](examples/06-c-static-dml/main.pc)
+- [`07-c-cursor-fetch-explicit`](examples/07-c-cursor-fetch-explicit/main.pc)
+- [`08-c-cursor-whenever-not-found`](examples/08-c-cursor-whenever-not-found/main.pc)
+- [`09-c-cursor-current-of`](examples/09-c-cursor-current-of/main.pc)
+- [`10-c-plsql-anonymous-block`](examples/10-c-plsql-anonymous-block/main.pc)
+- [`11-c-transaction-savepoint-rollback`](examples/11-c-transaction-savepoint-rollback/main.pc)
+- [`12-c-locking-for-update`](examples/12-c-locking-for-update/main.pc)
+- [`13-c-dynamic-sql-method1`](examples/13-c-dynamic-sql-method1/main.pc)
+- [`14-c-dynamic-sql-method2`](examples/14-c-dynamic-sql-method2/main.pc)
+- [`15-c-dynamic-sql-method3`](examples/15-c-dynamic-sql-method3/main.pc)
 
 You can run the full example set using `playbook.sh`.
 
