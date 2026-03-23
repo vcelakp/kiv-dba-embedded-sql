@@ -1,0 +1,105 @@
+/*
+ * VARCHAR host variables and indicator variables
+ *
+ * Description:
+ *   Fetches a nullable column into a VARCHAR host variable with an indicator
+ *   variable, then inserts a temporary row with a NULL note using an indicator.
+ *
+ * Directory:
+ *   05-c-varchar-and-indicator
+ */
+
+#define SQLCA_STORAGE_CLASS extern
+EXEC SQL INCLUDE SQLCA;
+#define ORACA_STORAGE_CLASS extern
+EXEC SQL INCLUDE ORACA;
+EXEC SQL INCLUDE esql_student_decl;
+
+#include <stdio.h>
+#include <string.h>
+#include "db_common.h"
+
+int main(void)
+{
+    EXEC SQL BEGIN DECLARE SECTION;
+        int student_id = 2;
+        int temp_id = 9002;
+        float grade = 1.8f;
+
+        VARCHAR full_name[101];
+        VARCHAR city[51];
+        VARCHAR note[101];
+
+        VARCHAR ins_name[101];
+        VARCHAR ins_city[51];
+        VARCHAR ins_note[101];
+
+        short note_ind = 0;
+        short ins_note_ind = -1; /* insert NULL into NOTE */
+    EXEC SQL END DECLARE SECTION;
+
+    connect_or_die();
+
+    EXEC SQL SELECT full_name, city, note
+        INTO :full_name, :city, :note:note_ind
+        FROM esql_student
+        WHERE student_id = :student_id;
+
+    if (sqlca.sqlcode != 0) {
+        print_sql_error("SELECT with indicator");
+        disconnect_rollback();
+        return 1;
+    }
+
+    full_name.arr[full_name.len] = '\0';
+    city.arr[city.len] = '\0';
+
+    printf("student_id = %d\n", student_id);
+    printf("full_name  = %s\n", (char *)full_name.arr);
+    printf("city       = %s\n", (char *)city.arr);
+
+    if (note_ind == -1) {
+        printf("note       = NULL\n");
+    } else {
+        note.arr[note.len] = '\0';
+        printf("note       = %s\n", (char *)note.arr);
+    }
+
+    strcpy((char *)ins_name.arr, "Docasny");
+    ins_name.len = strlen((char *)ins_name.arr);
+
+    strcpy((char *)ins_city.arr, "Plzen");
+    ins_city.len = strlen((char *)ins_city.arr);
+
+    strcpy((char *)ins_note.arr, "Text, ktery bude ignorovan");
+    ins_note.len = strlen((char *)ins_note.arr);
+
+    EXEC SQL INSERT INTO esql_student (student_id, full_name, city, grade, note)
+        VALUES (:temp_id, :ins_name, :ins_city, :grade, :ins_note:ins_note_ind);
+
+    if (sqlca.sqlcode != 0) {
+        print_sql_error("INSERT NULL with indicator");
+        disconnect_rollback();
+        return 1;
+    }
+
+    printf("Inserted temporary row with NOTE = NULL\n");
+
+    EXEC SQL SELECT note
+        INTO :note:note_ind
+        FROM esql_student
+        WHERE student_id = :temp_id;
+
+    if (sqlca.sqlcode != 0) {
+        print_sql_error("SELECT temp row");
+        disconnect_rollback();
+        return 1;
+    }
+
+    if (note_ind == -1) {
+        printf("Fetched NOTE from temp row: NULL\n");
+    }
+
+    disconnect_rollback();
+    return 0;
+}

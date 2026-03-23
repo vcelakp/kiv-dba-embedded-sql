@@ -1,0 +1,89 @@
+/*
+ * Common helper functions for Oracle Pro*C examples
+ *
+ * Description:
+ *   Loads connection data from ORA_USER, ORA_PASS, and ORA_DB,
+ *   connects to Oracle, disconnects, and prints SQL diagnostics.
+ *
+ * Directory:
+ *   common
+ */
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+EXEC SQL INCLUDE SQLCA;
+EXEC SQL INCLUDE ORACA;
+
+#include <sqlca.h>
+#include <sqlcpr.h>
+#include "db_common.h"
+
+static void copy_env(char *dst, size_t dst_size, const char *src)
+{
+    strncpy(dst, src, dst_size - 1);
+    dst[dst_size - 1] = '\0';
+}
+
+void print_sql_error(const char *where)
+{
+    char msg[512];
+    size_t buf_len = sizeof(msg);
+    size_t msg_len = 0;
+
+    fprintf(stderr, "\n[%s]\n", where);
+    fprintf(stderr, "SQLCODE = %ld\n", sqlca.sqlcode);
+
+    if (sqlca.sqlcode != 0) {
+        sqlglm((unsigned char *)msg, &buf_len, &msg_len);
+        if (msg_len > buf_len) {
+            msg_len = buf_len;
+        }
+        fprintf(stderr, "SQLERRM = %.*s\n", (int)msg_len, msg);
+    } else {
+        fprintf(stderr, "SQLERRM = success\n");
+    }
+}
+
+void connect_or_die(void)
+{
+    EXEC SQL BEGIN DECLARE SECTION;
+        char ora_user[64];
+        char ora_pass[64];
+        char ora_db[128];
+    EXEC SQL END DECLARE SECTION;
+
+    const char *u = getenv("ORA_USER");
+    const char *p = getenv("ORA_PASS");
+    const char *d = getenv("ORA_DB");
+
+    if (!u || !p || !d) {
+        fprintf(stderr,
+                "Missing ORA_USER / ORA_PASS / ORA_DB environment variable\n");
+        exit(1);
+    }
+
+    copy_env(ora_user, sizeof(ora_user), u);
+    copy_env(ora_pass, sizeof(ora_pass), p);
+    copy_env(ora_db,   sizeof(ora_db),   d);
+
+    EXEC SQL CONNECT :ora_user IDENTIFIED BY :ora_pass USING :ora_db;
+
+    if (sqlca.sqlcode != 0) {
+        print_sql_error("CONNECT");
+        exit(1);
+    }
+
+    printf("Connected to Oracle\n");
+}
+
+void disconnect_commit(void)
+{
+    EXEC SQL COMMIT WORK RELEASE;
+}
+
+void disconnect_rollback(void)
+{
+    EXEC SQL ROLLBACK WORK RELEASE;
+}

@@ -4,3 +4,4 @@ examples/*/*.lis
 ora_db
 ora_user
 ora_pass
+*.swp

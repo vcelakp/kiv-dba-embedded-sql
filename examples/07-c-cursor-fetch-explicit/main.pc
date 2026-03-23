@@ -1,0 +1,75 @@
+/*
+ * Cursor processing with explicit end-of-data detection
+ *
+ * Description:
+ *   Demonstrates DECLARE, OPEN, FETCH, and CLOSE. End of data is detected
+ *   explicitly through sqlca.sqlcode.
+ *
+ * Directory:
+ *   07-c-cursor-fetch-explicit
+ */
+
+
+#define SQLCA_STORAGE_CLASS extern
+EXEC SQL INCLUDE SQLCA;
+#define ORACA_STORAGE_CLASS extern
+EXEC SQL INCLUDE ORACA;
+EXEC SQL INCLUDE esql_student_decl;
+
+#include <stdio.h>
+#include "db_common.h"
+
+EXEC SQL DECLARE student_cursor CURSOR FOR
+    SELECT student_id, full_name, grade
+    FROM esql_student
+    ORDER BY student_id;
+
+int main(void)
+{
+    EXEC SQL BEGIN DECLARE SECTION;
+        int student_id = 0;
+        VARCHAR full_name[101];
+        float grade = 0.0f;
+        short grade_ind = 0;
+    EXEC SQL END DECLARE SECTION;
+
+    connect_or_die();
+
+    EXEC SQL OPEN student_cursor;
+
+    if (sqlca.sqlcode != 0) {
+        print_sql_error("OPEN cursor");
+        disconnect_rollback();
+        return 1;
+    }
+
+    for (;;) {
+        EXEC SQL FETCH student_cursor
+            INTO :student_id, :full_name, :grade:grade_ind;
+
+        if (sqlca.sqlcode == 1403) {
+            printf("End of cursor data\n");
+            break;
+        }
+
+        if (sqlca.sqlcode != 0) {
+            print_sql_error("FETCH");
+            EXEC SQL CLOSE student_cursor;
+            disconnect_rollback();
+            return 1;
+        }
+
+        full_name.arr[full_name.len] = '\0';
+
+        if (grade_ind == -1) {
+            printf("%d | %s | grade=NULL\n", student_id, (char *)full_name.arr);
+        } else {
+            printf("%d | %s | grade=%.1f\n",
+                   student_id, (char *)full_name.arr, grade);
+        }
+    }
+
+    EXEC SQL CLOSE student_cursor;
+    disconnect_rollback();
+    return 0;
+}

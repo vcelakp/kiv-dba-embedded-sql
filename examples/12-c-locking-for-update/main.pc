@@ -1,0 +1,68 @@
+/*
+ * Row locking with SELECT ... FOR UPDATE
+ *
+ * Description:
+ *   Locks one row and keeps the lock until COMMIT or ROLLBACK. Use this
+ *   example in two sessions to demonstrate blocking behavior.
+ *
+ * Directory:
+ *   12-c-locking-for-update
+ */
+
+#define SQLCA_STORAGE_CLASS extern
+EXEC SQL INCLUDE SQLCA;
+#define ORACA_STORAGE_CLASS extern
+EXEC SQL INCLUDE ORACA;
+EXEC SQL INCLUDE esql_student_decl;
+
+#include <stdio.h>
+#include "db_common.h"
+
+EXEC SQL DECLARE lock_cursor CURSOR FOR
+    SELECT note
+    FROM esql_student
+    WHERE student_id = 1
+    FOR UPDATE OF note;
+
+int main(void)
+{
+    EXEC SQL BEGIN DECLARE SECTION;
+        VARCHAR note[101];
+        short note_ind = 0;
+    EXEC SQL END DECLARE SECTION;
+
+    connect_or_die();
+
+    EXEC SQL OPEN lock_cursor;
+
+    if (sqlca.sqlcode != 0) {
+        print_sql_error("OPEN lock_cursor");
+        disconnect_rollback();
+        return 1;
+    }
+
+    EXEC SQL FETCH lock_cursor
+        INTO :note:note_ind;
+
+    if (sqlca.sqlcode != 0) {
+        print_sql_error("FETCH lock_cursor");
+        EXEC SQL CLOSE lock_cursor;
+        disconnect_rollback();
+        return 1;
+    }
+
+    if (note_ind == -1) {
+        printf("Row 1 is locked; NOTE is NULL\n");
+    } else {
+        note.arr[note.len] = '\0';
+        printf("Row 1 is locked; NOTE = %s\n", (char *)note.arr);
+    }
+
+    printf("\nNow open a second session and try to update student_id = 1.\n");
+    printf("Press ENTER to release the row lock with ROLLBACK...\n");
+    getchar();
+
+    EXEC SQL CLOSE lock_cursor;
+    disconnect_rollback();
+    return 0;
+}

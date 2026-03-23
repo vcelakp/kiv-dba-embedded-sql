@@ -1,0 +1,55 @@
+/*
+ * Minimal example of SQLCA, host variables, and error handling
+ *
+ * Description:
+ *   Connects to Oracle, executes one successful statement and one statement
+ *   that returns NO DATA FOUND, prints SQLCODE and SQLERRM, and disconnects.
+ *
+ * Directory:
+ *   04-c-sqlca-and-error-handling-minimal
+ */
+
+#define SQLCA_STORAGE_CLASS extern
+EXEC SQL INCLUDE SQLCA;
+#define ORACA_STORAGE_CLASS extern
+EXEC SQL INCLUDE ORACA;
+EXEC SQL INCLUDE esql_student_decl;
+
+#include <stdio.h>
+#include "db_common.h"
+
+int main(void)
+{
+    EXEC SQL BEGIN DECLARE SECTION;
+        int student_count = 0;
+        int missing_id = -1;
+        float grade = 0.0f;
+    EXEC SQL END DECLARE SECTION;
+
+    connect_or_die();
+
+    EXEC SQL SELECT COUNT(*)
+        INTO :student_count
+        FROM esql_student;
+
+    if (sqlca.sqlcode != 0) {
+        print_sql_error("COUNT students");
+        disconnect_rollback();
+        return 1;
+    }
+
+    printf("Rows in ESQL_STUDENT: %d\n", student_count);
+    printf("sqlca.sqlcode after COUNT = %ld\n", sqlca.sqlcode);
+
+    EXEC SQL SELECT grade
+        INTO :grade
+        FROM esql_student
+        WHERE student_id = :missing_id;
+
+    if (sqlca.sqlcode != 0) {
+        print_sql_error("SELECT grade for missing row");
+    }
+
+    disconnect_rollback();
+    return 0;
+}

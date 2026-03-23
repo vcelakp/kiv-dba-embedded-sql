@@ -1,0 +1,62 @@
+/*
+ * Oracle database connection using environment variables
+ *
+ * Description:
+ *   Demonstrates how to connect to an Oracle database using embedded SQL.
+ *   The username, password, and database connection string are loaded
+ *   from the ORA_USER, ORA_PASS, and ORA_DB environment variables.
+ *   After a successful connection, the session is closed with
+ *   COMMIT WORK RELEASE.
+ *
+ * Directory:
+ *   03-c-oracle-connection-env
+ */
+
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h> // fce getenv
+
+#define SQLCA_STORAGE_CLASS extern
+EXEC SQL INCLUDE SQLCA;
+
+int main(void)
+{
+
+    EXEC SQL BEGIN DECLARE SECTION;
+        char ora_user[64];
+        char ora_pass[64];
+        char ora_db[128];
+    EXEC SQL END DECLARE SECTION;
+
+    const char *d = getenv("ORA_DB");
+    const char *u = getenv("ORA_USER");
+    const char *p = getenv("ORA_PASS");
+    if (!d || !u || !p) {
+        fprintf(stderr, "Missing ORA_USER / ORA_PASS / ORA_DB environment variable\n");
+        exit(1);
+    }
+
+    strncpy(ora_user, u, sizeof(ora_user)-1);
+    strncpy(ora_pass, p, sizeof(ora_pass)-1);
+    strncpy(ora_db,   d, sizeof(ora_db)-1);
+
+    ora_user[sizeof(ora_user)-1] = '\0';
+    ora_pass[sizeof(ora_pass)-1] = '\0';
+    ora_db[sizeof(ora_db)-1]     = '\0';
+
+    printf("ORA_DB=%s\n", ora_db);
+    printf("ORA_USER=%s\n", ora_user);
+
+    EXEC SQL CONNECT :ora_user IDENTIFIED BY :ora_pass USING :ora_db;
+
+    if (sqlca.sqlcode != 0) {
+        printf("Connection failed: %ld\n", sqlca.sqlcode);
+        return 1;
+    }
+
+    printf("Connected to Oracle\n");
+
+    EXEC SQL COMMIT WORK RELEASE;
+    return 0;
+}
+

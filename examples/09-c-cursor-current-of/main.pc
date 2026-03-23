@@ -1,0 +1,86 @@
+/*
+ * FOR UPDATE and CURRENT OF
+ *
+ * Description:
+ *   Opens a cursor FOR UPDATE, fetches rows, and updates the current row
+ *   using WHERE CURRENT OF. The example ends with ROLLBACK so the table
+ *   remains unchanged.
+ *
+ * Directory:
+ *   09-c-cursor-current-of
+ */
+
+#define SQLCA_STORAGE_CLASS extern
+EXEC SQL INCLUDE SQLCA;
+#define ORACA_STORAGE_CLASS extern
+EXEC SQL INCLUDE ORACA;
+EXEC SQL INCLUDE esql_student_decl;
+
+#include <stdio.h>
+#include "db_common.h"
+
+EXEC SQL DECLARE grade_cursor CURSOR FOR
+    SELECT student_id, full_name, grade
+    FROM esql_student
+    WHERE city = 'Brno' AND grade IS NOT NULL
+    ORDER BY student_id
+    FOR UPDATE OF grade;
+
+int main(void)
+{
+    EXEC SQL BEGIN DECLARE SECTION;
+        int student_id = 0;
+        VARCHAR full_name[101];
+        float grade = 0.0f;
+        float new_grade = 0.0f;
+    EXEC SQL END DECLARE SECTION;
+
+    connect_or_die();
+
+    EXEC SQL OPEN grade_cursor;
+
+    if (sqlca.sqlcode != 0) {
+        print_sql_error("OPEN grade_cursor");
+        disconnect_rollback();
+        return 1;
+    }
+
+    EXEC SQL WHENEVER NOT FOUND DO break;
+
+    for (;;) {
+        EXEC SQL FETCH grade_cursor
+            INTO :student_id, :full_name, :grade;
+
+        if (sqlca.sqlcode < 0) {
+            print_sql_error("FETCH grade_cursor");
+            EXEC SQL CLOSE grade_cursor;
+            disconnect_rollback();
+            return 1;
+        }
+
+        full_name.arr[full_name.len] = '\0';
+        new_grade = grade - 0.1f;
+
+        EXEC SQL UPDATE esql_student
+            SET grade = :new_grade
+            WHERE CURRENT OF grade_cursor;
+
+        if (sqlca.sqlcode != 0) {
+            print_sql_error("UPDATE CURRENT OF");
+            EXEC SQL CLOSE grade_cursor;
+            disconnect_rollback();
+            return 1;
+        }
+
+        printf("Updated %d | %s | %.1f -> %.1f\n",
+               student_id, (char *)full_name.arr, grade, new_grade);
+
+        /* Do not COMMIT here. FOR UPDATE cursors are closed by COMMIT/ROLLBACK. */
+    }
+
+    EXEC SQL WHENEVER NOT FOUND CONTINUE;
+
+    EXEC SQL CLOSE grade_cursor;
+    disconnect_rollback();
+    return 0;
+}

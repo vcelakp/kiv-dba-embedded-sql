@@ -1,0 +1,17 @@
+/*
+ * Hello World in C
+ *
+ * Description:
+ *   A basic example of a C program that prints
+ *   "Hello World" to the standard output.
+ *
+ * Directory:
+ *   01-c-hello-world
+ */
+
+#include <stdio.h>
+
+int main() {
+  printf("Hello World\n");
+  return(0);
+}

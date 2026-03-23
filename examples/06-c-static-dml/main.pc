@@ -1,0 +1,101 @@
+/*
+ * Static DML: INSERT, SELECT, UPDATE, DELETE
+ *
+ * Description:
+ *   Demonstrates static data manipulation with one temporary row and prints
+ *   the rows-processed count from SQLCA after DML statements.
+ *
+ * Directory:
+ *   06-c-static-dml
+ */
+
+#define SQLCA_STORAGE_CLASS extern
+EXEC SQL INCLUDE SQLCA;
+#define ORACA_STORAGE_CLASS extern
+EXEC SQL INCLUDE ORACA;
+EXEC SQL INCLUDE esql_student_decl;
+
+#include <stdio.h>
+#include <string.h>
+#include "db_common.h"
+
+int main(void)
+{
+    EXEC SQL BEGIN DECLARE SECTION;
+        int student_id = 9001;
+        float grade = 1.9f;
+
+        VARCHAR full_name[101];
+        VARCHAR city[51];
+        VARCHAR note[101];
+
+        VARCHAR out_name[101];
+        VARCHAR out_city[51];
+        float out_grade = 0.0f;
+        short out_grade_ind = 0;
+    EXEC SQL END DECLARE SECTION;
+
+    connect_or_die();
+
+    strcpy((char *)full_name.arr, "StatickySQL");
+    full_name.len = strlen((char *)full_name.arr);
+
+    strcpy((char *)city.arr, "Olomouc");
+    city.len = strlen((char *)city.arr);
+
+    strcpy((char *)note.arr, "temporary row");
+    note.len = strlen((char *)note.arr);
+
+    EXEC SQL DELETE FROM esql_student WHERE student_id = :student_id;
+
+    EXEC SQL INSERT INTO esql_student (student_id, full_name, city, grade, note)
+        VALUES (:student_id, :full_name, :city, :grade, :note);
+
+    if (sqlca.sqlcode != 0) {
+        print_sql_error("INSERT");
+        disconnect_rollback();
+        return 1;
+    }
+
+    printf("Rows inserted = %ld\n", sqlca.sqlerrd[2]);
+
+    EXEC SQL SELECT full_name, city, grade
+        INTO :out_name, :out_city, :out_grade:out_grade_ind
+        FROM esql_student
+        WHERE student_id = :student_id;
+
+    out_name.arr[out_name.len] = '\0';
+    out_city.arr[out_city.len] = '\0';
+
+    printf("Selected row: id=%d, name=%s, city=%s, grade=%.1f\n",
+           student_id, (char *)out_name.arr, (char *)out_city.arr, out_grade);
+
+    strcpy((char *)city.arr, "Pilsen");
+    city.len = strlen((char *)city.arr);
+
+    EXEC SQL UPDATE esql_student
+        SET city = :city
+        WHERE student_id = :student_id;
+
+    if (sqlca.sqlcode != 0) {
+        print_sql_error("UPDATE");
+        disconnect_rollback();
+        return 1;
+    }
+
+    printf("Rows updated = %ld\n", sqlca.sqlerrd[2]);
+
+    EXEC SQL DELETE FROM esql_student
+        WHERE student_id = :student_id;
+
+    if (sqlca.sqlcode != 0) {
+        print_sql_error("DELETE");
+        disconnect_rollback();
+        return 1;
+    }
+
+    printf("Rows deleted = %ld\n", sqlca.sqlerrd[2]);
+
+    disconnect_rollback();
+    return 0;
+}

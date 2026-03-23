@@ -1,0 +1,66 @@
+/*
+ * Cursor loop with WHENEVER NOT FOUND
+ *
+ * Description:
+ *   Demonstrates end-of-fetch handling using WHENEVER NOT FOUND DO break.
+ *   The directive is reset afterwards because WHENEVER scope is positional.
+ *
+ * Directory:
+ *   08-c-cursor-whenever-not-found
+ */
+
+#define SQLCA_STORAGE_CLASS extern
+EXEC SQL INCLUDE SQLCA;
+#define ORACA_STORAGE_CLASS extern
+EXEC SQL INCLUDE ORACA;
+EXEC SQL INCLUDE esql_student_decl;
+
+#include <stdio.h>
+#include "db_common.h"
+
+EXEC SQL DECLARE brno_cursor CURSOR FOR
+    SELECT student_id, full_name
+    FROM esql_student
+    WHERE city = 'Brno'
+    ORDER BY student_id;
+
+int main(void)
+{
+    EXEC SQL BEGIN DECLARE SECTION;
+        int student_id = 0;
+        VARCHAR full_name[101];
+    EXEC SQL END DECLARE SECTION;
+
+    connect_or_die();
+
+    EXEC SQL OPEN brno_cursor;
+
+    if (sqlca.sqlcode != 0) {
+        print_sql_error("OPEN brno_cursor");
+        disconnect_rollback();
+        return 1;
+    }
+
+    EXEC SQL WHENEVER NOT FOUND DO break;
+
+    for (;;) {
+        EXEC SQL FETCH brno_cursor
+            INTO :student_id, :full_name;
+
+        if (sqlca.sqlcode < 0) {
+            print_sql_error("FETCH brno_cursor");
+            EXEC SQL CLOSE brno_cursor;
+            disconnect_rollback();
+            return 1;
+        }
+
+        full_name.arr[full_name.len] = '\0';
+        printf("%d | %s\n", student_id, (char *)full_name.arr);
+    }
+
+    EXEC SQL WHENEVER NOT FOUND CONTINUE;
+
+    EXEC SQL CLOSE brno_cursor;
+    disconnect_rollback();
+    return 0;
+}

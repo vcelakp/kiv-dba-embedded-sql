@@ -1,0 +1,90 @@
+/*
+ * Transactions, SAVEPOINT, and ROLLBACK TO SAVEPOINT
+ *
+ * Description:
+ *   Inserts a temporary row, creates a savepoint, updates the row, rollback
+ *   to the savepoint, and verifies that the earlier state was restored.
+ *
+ * Directory:
+ *   11-c-transaction-savepoint-rollback
+ */
+
+#define SQLCA_STORAGE_CLASS extern
+EXEC SQL INCLUDE SQLCA;
+#define ORACA_STORAGE_CLASS extern
+EXEC SQL INCLUDE ORACA;
+EXEC SQL INCLUDE esql_student_decl;
+
+#include <stdio.h>
+#include <string.h>
+#include "db_common.h"
+
+int main(void)
+{
+    EXEC SQL BEGIN DECLARE SECTION;
+        int student_id = 9100;
+        float grade = 2.4f;
+        VARCHAR full_name[101];
+        VARCHAR city[51];
+        VARCHAR note[101];
+        VARCHAR out_city[51];
+    EXEC SQL END DECLARE SECTION;
+
+    connect_or_die();
+
+    strcpy((char *)full_name.arr, "TransactionDemo");
+    full_name.len = strlen((char *)full_name.arr);
+
+    strcpy((char *)city.arr, "Plzen");
+    city.len = strlen((char *)city.arr);
+
+    strcpy((char *)note.arr, "before savepoint");
+    note.len = strlen((char *)note.arr);
+
+    EXEC SQL DELETE FROM esql_student WHERE student_id = :student_id;
+
+    EXEC SQL INSERT INTO esql_student (student_id, full_name, city, grade, note)
+        VALUES (:student_id, :full_name, :city, :grade, :note);
+
+    if (sqlca.sqlcode != 0) {
+        print_sql_error("INSERT transaction row");
+        disconnect_rollback();
+        return 1;
+    }
+
+    EXEC SQL SAVEPOINT sp_before_update;
+
+    strcpy((char *)city.arr, "Brno");
+    city.len = strlen((char *)city.arr);
+
+    EXEC SQL UPDATE esql_student
+        SET city = :city
+        WHERE student_id = :student_id;
+
+    if (sqlca.sqlcode != 0) {
+        print_sql_error("UPDATE after savepoint");
+        disconnect_rollback();
+        return 1;
+    }
+
+    EXEC SQL SELECT city
+        INTO :out_city
+        FROM esql_student
+        WHERE student_id = :student_id;
+
+    out_city.arr[out_city.len] = '\0';
+    printf("City after UPDATE              = %s\n", (char *)out_city.arr);
+
+    EXEC SQL ROLLBACK TO SAVEPOINT sp_before_update;
+
+    EXEC SQL SELECT city
+        INTO :out_city
+        FROM esql_student
+        WHERE student_id = :student_id;
+
+    out_city.arr[out_city.len] = '\0';
+    printf("City after ROLLBACK SAVEPOINT = %s\n", (char *)out_city.arr);
+
+    disconnect_rollback();
+    return 0;
+}

@@ -1,0 +1,48 @@
+/*
+ * Oracle database connection with hard-coded credentials
+   *
+ * Description:
+ *   Demonstrates how to connect to an Oracle database using embedded SQL.
+ *   The username, password, and database connection string are defined
+ *   directly in the source code.
+ *   After a successful connection, the session is closed with
+ *   ROLLBACK WORK RELEASE.
+ *
+ * Directory:
+ *   02-c-oracle-connection-hardcoded
+ */
+
+#include <stdio.h>
+#include <string.h>
+
+#define SQLCA_STORAGE_CLASS extern
+EXEC SQL INCLUDE sqlca;
+
+int main(void)
+{
+
+    EXEC SQL BEGIN DECLARE SECTION;
+        char database[34] = "oracle.example.com:1521/STUDENTS";
+        char username[32] = "tomas";
+        char password[32] = "MARNY";
+    EXEC SQL END DECLARE SECTION;
+
+    printf("database=%s\n", database);
+    printf("username=%s\n", username);
+    printf("password=%s\n", password);
+
+    EXEC SQL CONNECT :username IDENTIFIED BY :password USING :database;
+
+    if (sqlca.sqlcode != 0) {
+        printf("Connection failed: %ld\n", sqlca.sqlcode);
+        return 1;
+    }
+
+    printf("Connected to Oracle\n");
+
+    //EXEC SQL COMMIT WORK RELEASE;
+    EXEC SQL ROLLBACK WORK RELEASE;
+
+    return 0;
+}
+

@@ -1,0 +1,48 @@
+/*
+ * Dynamic SQL Method 1
+ *
+ * Description:
+ *   Executes a one-off non-query statement with EXECUTE IMMEDIATE.
+ *   The statement contains no host variables.
+ *
+ * Directory:
+ *   13-c-dynamic-sql-method1
+ */
+
+
+#define SQLCA_STORAGE_CLASS extern
+EXEC SQL INCLUDE SQLCA;
+#define ORACA_STORAGE_CLASS extern
+EXEC SQL INCLUDE ORACA;
+EXEC SQL INCLUDE esql_student_decl;
+
+#include <stdio.h>
+#include <string.h>
+#include "db_common.h"
+
+int main(void)
+{
+    EXEC SQL BEGIN DECLARE SECTION;
+        char sql_stmt[200];
+    EXEC SQL END DECLARE SECTION;
+
+    connect_or_die();
+
+    strcpy(sql_stmt,
+           "DELETE FROM esql_student WHERE student_id BETWEEN 9000 AND 9999");
+
+    printf("Dynamic statement: %s\n", sql_stmt);
+
+    EXEC SQL EXECUTE IMMEDIATE :sql_stmt;
+
+    if (sqlca.sqlcode != 0) {
+        print_sql_error("EXECUTE IMMEDIATE");
+        disconnect_rollback();
+        return 1;
+    }
+
+    printf("Rows deleted = %ld\n", sqlca.sqlerrd[2]);
+
+    disconnect_rollback();
+    return 0;
+}

@@ -1,0 +1,14 @@
+/*
+ * Empty program in C
+ *
+ * Description:
+ *   The simplest possible example of a C program.
+ *   The program contains only the main function and returns exit code 0.
+ *
+ * Directory:
+ *   00-c-empty-main
+ */
+
+int main() {
+  return(0);
+}

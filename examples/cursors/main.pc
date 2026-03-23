@@ -1,0 +1,282 @@
+/* CW w6 & w7 */
+
+#include <stdio.h>  // pro printf, fprintf
+#include <stdlib.h> // pro getenv, malloc apod.
+#include <string.h>
+
+#define SQLCA_STORAGE_CLASS extern
+#define ORACA_STORAGE_CLASS extern
+#define SQLCPR_STORAGE_CLASS extern
+
+EXEC SQL INCLUDE SQLCA;
+EXEC SQL INCLUDE ORACA;
+EXEC SQL INCLUDE SQLCPR;
+
+void chyba() {
+  // FIXED: char        err_msg[512];
+  unsigned char err_msg[512];
+  // FIXED: size_t err_buff_len = 512;
+  size_t   err_buff_len = sizeof(err_msg);
+  // FIXED: int  err_msg_len;
+  size_t err_msg_len = 0;
+
+  EXEC SQL WHENEVER SQLERROR CONTINUE;
+
+  //fprintf(stderr, "Číslo chyby: %d.\n", sqlca.sqlcode);
+  sqlglm(err_msg, &err_buff_len, &err_msg_len);
+  //fprintf(stderr, "ERROR SQLCODE number: %d.\n", sqlca.sqlcode);
+  fprintf(stderr, "ERROR %.*s\n", err_msg_len, err_msg);
+
+  EXEC SQL ROLLBACK WORK RELEASE;
+
+  exit(1);
+}
+
+void create_table() {
+  printf("Create table\n");
+
+  EXEC SQL BEGIN DECLARE SECTION;
+    char prikaz[256] = "CREATE TABLE tabulka ("               \
+                       "  klic    NUMBER        PRIMARY KEY," \
+                       "  retezec VARCHAR2(100) NOT NULL,"    \
+                       "  cislo   NUMBER"                     \
+                       ")";
+  EXEC SQL END DECLARE SECTION;  
+
+  EXEC SQL WHENEVER SQLERROR DO chyba();
+  EXEC SQL EXECUTE IMMEDIATE :prikaz;
+}
+
+void drop_table() {
+  printf("Drop table\n");
+
+  EXEC SQL BEGIN DECLARE SECTION;
+    char prikaz[256] = "DROP TABLE tabulka";
+  EXEC SQL END DECLARE SECTION;  
+
+  EXEC SQL WHENEVER SQLERROR DO chyba();
+  EXEC SQL EXECUTE IMMEDIATE :prikaz;
+}
+
+void vloz_zaznam_staticky(int klic, char *retezec) {
+
+  /* FIX: Nutna deklarace tabulky 'tabulka' pokud je sqlcheck=semantics */
+  EXEC SQL DECLARE tabulka TABLE
+  (
+    klic    NUMBER       NOT NULL,
+    retezec VARCHAR2(100) NOT NULL,
+    cislo   NUMBER
+  );
+  printf("Insert into TABULKA klic=%i retezec=%.*s\n", klic, retezec);
+  EXEC SQL WHENEVER SQLERROR DO chyba();
+  EXEC SQL INSERT INTO tabulka (klic, retezec)
+           VALUES (:klic, :retezec);
+  EXEC SQL COMMIT;
+}
+
+void vloz_zaznam_dynamicky(int klic, char *retezec) {
+  printf("Insert into TABULKA klic=%i retezec=%.*s\n", klic, retezec);
+  EXEC SQL BEGIN DECLARE SECTION;
+    char prikaz[256] = "INSERT INTO tabulka (klic, retezec) VALUES (:par1, :par2)";
+  EXEC SQL END DECLARE SECTION;  
+
+  EXEC SQL WHENEVER SQLERROR DO chyba();
+
+  EXEC SQL PREPARE sql_stmt FROM :prikaz;
+  EXEC SQL EXECUTE sql_stmt USING :klic, :retezec;
+  EXEC SQL COMMIT;
+}
+
+void aktualizuj_zaznamy_staticky(char *retezec, int cislo) {
+  printf("Update TABULKA set cislo=%i where retezec=%.*s\n", cislo, retezec);
+
+  EXEC SQL WHENEVER SQLERROR DO chyba();
+  EXEC SQL UPDATE tabulka
+              SET cislo = :cislo
+            WHERE retezec = :retezec;  
+  EXEC SQL COMMIT;
+}
+
+void aktualizuj_zaznamy_dynamicky(char *retezec, int cislo) {
+  printf("Update TABULKA set cislo=%i where retezec=%.*s\n", cislo, retezec);
+
+  EXEC SQL BEGIN DECLARE SECTION;
+    char prikaz[256] = "UPDATE tabulka SET cislo = :par1 WHERE retezec = :par2";
+  EXEC SQL END DECLARE SECTION;  
+
+  EXEC SQL WHENEVER SQLERROR DO chyba();
+  EXEC SQL PREPARE sql_stmt FROM :prikaz;
+  EXEC SQL EXECUTE sql_stmt USING :cislo, :retezec;
+  EXEC SQL COMMIT;
+}
+
+void smaz_zaznamy_staticky(char *retezec) {
+  printf("Delete from TABULKA where retezec=%.*s\n", retezec);
+
+  EXEC SQL WHENEVER SQLERROR DO chyba();
+  EXEC SQL DELETE FROM tabulka WHERE retezec = :retezec;  
+  EXEC SQL COMMIT;
+}
+
+void smaz_zaznamy_dynamicky(char *retezec) {
+  printf("Delete from TABULKA where retezec=%.*s\n", retezec);
+
+  EXEC SQL BEGIN DECLARE SECTION;
+    char prikaz[256] = "DELETE FROM tabulka WHERE retezec = :retezec";
+  EXEC SQL END DECLARE SECTION;  
+
+  EXEC SQL WHENEVER SQLERROR DO chyba();
+  EXEC SQL PREPARE sql_stmt FROM :prikaz;
+  EXEC SQL EXECUTE sql_stmt USING :retezec;
+  EXEC SQL COMMIT;
+}
+
+void ziskej_zaznam_kurzorem_staticky(int klic) {
+  printf("Select from TABULKA where klic=%i\n", klic);
+
+  EXEC SQL BEGIN DECLARE SECTION;
+    VARCHAR retezec[100];
+    int     cislo;
+    short   retezec_indicator;
+    short   cislo_indicator;
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL DECLARE c_tabulka_staticky CURSOR FOR
+           SELECT retezec, cislo
+		     FROM tabulka
+            WHERE klic = :klic;
+
+  EXEC SQL OPEN c_tabulka_staticky;
+  
+  EXEC SQL WHENEVER NOT FOUND DO chyba();
+  EXEC SQL FETCH c_tabulka_staticky 
+            INTO :retezec INDICATOR :retezec_indicator, :cislo INDICATOR :cislo_indicator;
+
+  EXEC SQL CLOSE c_tabulka_staticky;
+
+  retezec.arr[retezec.len] = '\0';
+
+  printf("Hodnota indikátoru proměnné řetězec: %d.\n", retezec_indicator);
+  printf("Hodnota indikátoru proměnné číslo: %d.\n", cislo_indicator);
+
+  if (cislo_indicator == -1) {
+    printf("Získána tato data: %s\n", retezec.arr);
+  }
+  else {
+    printf("Získána tato data: %s, %d\n", retezec.arr, cislo);
+  }
+}
+
+
+void ziskej_zaznam_kurzorem_dynamicky(int klic) {
+  printf("Select from TABULKA where klic=%i\n", klic);
+
+  EXEC SQL BEGIN DECLARE SECTION;
+    char dotaz[256] = "SELECT retezec, cislo FROM tabulka WHERE klic = :k";
+    VARCHAR retezec[100];
+    int     cislo;
+    short   retezec_indicator;
+    short   cislo_indicator;
+  EXEC SQL END DECLARE SECTION;
+
+  EXEC SQL PREPARE sql_stmt FROM :dotaz;
+  EXEC SQL DECLARE c_tabulka_dynamicky CURSOR FOR sql_stmt;
+  EXEC SQL OPEN c_tabulka_dynamicky USING :klic;
+  
+  EXEC SQL WHENEVER NOT FOUND DO chyba();
+  EXEC SQL FETCH c_tabulka_dynamicky 
+            INTO :retezec INDICATOR :retezec_indicator, :cislo INDICATOR :cislo_indicator;
+
+  EXEC SQL CLOSE c_tabulka_dynamicky;
+
+  retezec.arr[retezec.len] = '\0';
+
+  printf("Hodnota indikátoru proměnné řetězec: %d.\n", retezec_indicator);
+  printf("Hodnota indikátoru proměnné číslo: %d.\n", cislo_indicator);
+
+  if (cislo_indicator == -1) {
+    printf("Získána tato data: %s\n", retezec.arr);
+  }
+  else {
+    printf("Získána tato data: %s, %d\n", retezec.arr, cislo);
+  }
+}
+
+
+int main () {
+
+  EXEC SQL BEGIN DECLARE SECTION;
+      char ora_user[64];
+      char ora_pass[64];
+      char ora_db[128];
+  EXEC SQL END DECLARE SECTION;
+
+  const char *d = getenv("ORA_DB");
+  const char *u = getenv("ORA_USER");
+  const char *p = getenv("ORA_PASS");
+  if (!d || !u || !p) {
+      fprintf(stderr, "Missing ORA_USER / ORA_PASS / ORA_DB environment variable\n");
+      exit(1);
+  }
+
+  strncpy(ora_user, u, sizeof(ora_user)-1);
+  strncpy(ora_pass, p, sizeof(ora_pass)-1);
+  strncpy(ora_db,   d, sizeof(ora_db)-1);
+
+  ora_user[sizeof(ora_user)-1] = '\0';
+  ora_pass[sizeof(ora_pass)-1] = '\0';
+  ora_db[sizeof(ora_db)-1]     = '\0';
+
+  printf("Oracle database %s\n", ora_db);
+  printf("Oracle username %s\n", ora_user);
+  printf("Connecting ...\n");
+
+  EXEC SQL CONNECT :ora_user IDENTIFIED BY :ora_pass USING :ora_db;
+
+  if (sqlca.sqlcode != 0) {
+      printf("Connection failed: %ld\n", sqlca.sqlcode);
+      return 1;
+  }
+
+  printf("Connected to Oracle\n");
+
+  drop_table();
+  create_table();
+  
+  vloz_zaznam_staticky(1, "Staticky");
+  vloz_zaznam_staticky(2, "Staticky");
+  vloz_zaznam_staticky(3, "Staticky");
+  vloz_zaznam_staticky(4, "Staticky");
+  vloz_zaznam_staticky(5, "Staticky");
+
+  vloz_zaznam_dynamicky(6, "Dynamicky");
+  vloz_zaznam_dynamicky(7, "Dynamicky");
+  vloz_zaznam_dynamicky(8, "Dynamicky");
+  vloz_zaznam_dynamicky(9, "Dynamicky");
+  vloz_zaznam_dynamicky(10, "Dynamicky");
+
+  ziskej_zaznam_kurzorem_staticky(1);
+  ziskej_zaznam_kurzorem_staticky(2);
+  ziskej_zaznam_kurzorem_staticky(6);
+  ziskej_zaznam_kurzorem_staticky(7);
+
+  ziskej_zaznam_kurzorem_dynamicky(1);
+  ziskej_zaznam_kurzorem_dynamicky(2);
+  ziskej_zaznam_kurzorem_dynamicky(6);
+  ziskej_zaznam_kurzorem_dynamicky(7);
+
+  aktualizuj_zaznamy_staticky("Staticky", 100);
+  aktualizuj_zaznamy_dynamicky("Dynamicky", 200);
+
+  ziskej_zaznam_kurzorem_staticky(1);
+  ziskej_zaznam_kurzorem_staticky(100);
+
+  smaz_zaznamy_staticky("Staticky");
+  smaz_zaznamy_dynamicky("Dynamicky");
+
+  drop_table();
+
+  EXEC SQL COMMIT WORK RELEASE;
+  
+  return(0);
+}
