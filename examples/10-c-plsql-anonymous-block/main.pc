@@ -14,7 +14,7 @@
 EXEC SQL INCLUDE SQLCA;
 #define ORACA_STORAGE_CLASS extern
 EXEC SQL INCLUDE ORACA;
-EXEC SQL INCLUDE esql_student_decl;
+EXEC SQL INCLUDE embedded_sql_student_decl;
 
 #include <stdio.h>
 #include "db_common.h"
@@ -31,25 +31,25 @@ int main(void)
     EXEC SQL EXECUTE
     BEGIN
         DECLARE
-            v_grade esql_student.grade%TYPE;
+            v_grade embedded_sql_student.grade%TYPE;
         BEGIN
             SELECT grade
               INTO v_grade
-              FROM esql_student
+              FROM embedded_sql_student
              WHERE student_id = :student_id;
 
             IF v_grade IS NULL THEN
-                UPDATE esql_student
+                UPDATE embedded_sql_student
                    SET note = 'grade is NULL'
                  WHERE student_id = :student_id;
                 :status_code := 0;
             ELSIF v_grade <= 2.0 THEN
-                UPDATE esql_student
+                UPDATE embedded_sql_student
                    SET note = 'scholarship candidate'
                  WHERE student_id = :student_id;
                 :status_code := 1;
             ELSE
-                UPDATE esql_student
+                UPDATE embedded_sql_student
                    SET note = 'regular student'
                  WHERE student_id = :student_id;
                 :status_code := 2;

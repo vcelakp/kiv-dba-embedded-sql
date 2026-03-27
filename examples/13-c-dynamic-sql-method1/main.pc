@@ -14,7 +14,7 @@
 EXEC SQL INCLUDE SQLCA;
 #define ORACA_STORAGE_CLASS extern
 EXEC SQL INCLUDE ORACA;
-EXEC SQL INCLUDE esql_student_decl;
+EXEC SQL INCLUDE embedded_sql_student_decl;
 
 #include <stdio.h>
 #include <string.h>
@@ -29,7 +29,7 @@ int main(void)
     connect_or_die();
 
     strcpy(sql_stmt,
-           "DELETE FROM esql_student WHERE student_id BETWEEN 9000 AND 9999");
+           "DELETE FROM embedded_sql_student WHERE student_id BETWEEN 9000 AND 9999");
 
     printf("Dynamic statement: %s\n", sql_stmt);
 

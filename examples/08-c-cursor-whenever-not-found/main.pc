@@ -13,14 +13,14 @@
 EXEC SQL INCLUDE SQLCA;
 #define ORACA_STORAGE_CLASS extern
 EXEC SQL INCLUDE ORACA;
-EXEC SQL INCLUDE esql_student_decl;
+EXEC SQL INCLUDE embedded_sql_student_decl;
 
 #include <stdio.h>
 #include "db_common.h"
 
 EXEC SQL DECLARE brno_cursor CURSOR FOR
-    SELECT student_id, full_name
-    FROM esql_student
+    SELECT student_id, name
+    FROM embedded_sql_student
     WHERE city = 'Brno'
     ORDER BY student_id;
 
@@ -28,7 +28,7 @@ int main(void)
 {
     EXEC SQL BEGIN DECLARE SECTION;
         int student_id = 0;
-        VARCHAR full_name[101];
+        VARCHAR name[101];
     EXEC SQL END DECLARE SECTION;
 
     connect_or_die();
@@ -45,7 +45,7 @@ int main(void)
 
     for (;;) {
         EXEC SQL FETCH brno_cursor
-            INTO :student_id, :full_name;
+            INTO :student_id, :name;
 
         if (sqlca.sqlcode < 0) {
             print_sql_error("FETCH brno_cursor");
@@ -54,8 +54,8 @@ int main(void)
             return 1;
         }
 
-        full_name.arr[full_name.len] = '\0';
-        printf("%d | %s\n", student_id, (char *)full_name.arr);
+        name.arr[name.len] = '\0';
+        printf("%d | %s\n", student_id, (char *)name.arr);
     }
 
     EXEC SQL WHENEVER NOT FOUND CONTINUE;

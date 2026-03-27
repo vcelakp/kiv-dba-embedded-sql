@@ -1,0 +1,41 @@
+services:
+  embedded-sql:
+    image: ${EMBEDDED_SQL_IMAGE:-mre.zcu.cz.local/kiv-dba/embedded-sql:2026.1}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      network: host
+    platform: linux/amd64
+    working_dir: /embedded-sql
+    volumes:
+      - workspace:/embedded-sql
+      - ./host-workspace:/embedded-sql/host-exchange
+    secrets:
+      - source: ora_db
+        target: ora_db
+      - source: ora_user
+        target: ora_user
+      - source: ora_pass
+        target: ora_pass
+    environment:
+      ORA_DB_FILE: /run/secrets/ora_db
+      ORA_USER_FILE: /run/secrets/ora_user
+      ORA_PASS_FILE: /run/secrets/ora_pass
+      PROC_RUNTIME_CFG_DIR: /tmp
+    network_mode: host
+    entrypoint: ["/embedded-sql/docker-entrypoint.sh"]
+    stdin_open: true
+    tty: true
+    init: true
+
+
+secrets:
+  ora_db:
+    file: ${ORA_DB_SECRET_FILE:-./ora_db}
+  ora_user:
+    file: ${ORA_USER_SECRET_FILE:-./ora_user}
+  ora_pass:
+    file: ${ORA_PASS_SECRET_FILE:-./ora_pass}
+
+volumes:
+  workspace:

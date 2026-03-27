@@ -14,14 +14,14 @@
 EXEC SQL INCLUDE SQLCA;
 #define ORACA_STORAGE_CLASS extern
 EXEC SQL INCLUDE ORACA;
-EXEC SQL INCLUDE esql_student_decl;
+EXEC SQL INCLUDE embedded_sql_student_decl;
 
 #include <stdio.h>
 #include "db_common.h"
 
 EXEC SQL DECLARE grade_cursor CURSOR FOR
-    SELECT student_id, full_name, grade
-    FROM esql_student
+    SELECT student_id, name, grade
+    FROM embedded_sql_student
     WHERE city = 'Brno' AND grade IS NOT NULL
     ORDER BY student_id
     FOR UPDATE OF grade;
@@ -30,7 +30,7 @@ int main(void)
 {
     EXEC SQL BEGIN DECLARE SECTION;
         int student_id = 0;
-        VARCHAR full_name[101];
+        VARCHAR name[101];
         float grade = 0.0f;
         float new_grade = 0.0f;
     EXEC SQL END DECLARE SECTION;
@@ -49,7 +49,7 @@ int main(void)
 
     for (;;) {
         EXEC SQL FETCH grade_cursor
-            INTO :student_id, :full_name, :grade;
+            INTO :student_id, :name, :grade;
 
         if (sqlca.sqlcode < 0) {
             print_sql_error("FETCH grade_cursor");
@@ -58,10 +58,10 @@ int main(void)
             return 1;
         }
 
-        full_name.arr[full_name.len] = '\0';
+        name.arr[name.len] = '\0';
         new_grade = grade - 0.1f;
 
-        EXEC SQL UPDATE esql_student
+        EXEC SQL UPDATE embedded_sql_student
             SET grade = :new_grade
             WHERE CURRENT OF grade_cursor;
 
@@ -73,7 +73,7 @@ int main(void)
         }
 
         printf("Updated %d | %s | %.1f -> %.1f\n",
-               student_id, (char *)full_name.arr, grade, new_grade);
+               student_id, (char *)name.arr, grade, new_grade);
 
         /* Do not COMMIT here. FOR UPDATE cursors are closed by COMMIT/ROLLBACK. */
     }

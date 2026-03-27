@@ -13,7 +13,7 @@
 EXEC SQL INCLUDE SQLCA;
 #define ORACA_STORAGE_CLASS extern
 EXEC SQL INCLUDE ORACA;
-EXEC SQL INCLUDE esql_student_decl;
+EXEC SQL INCLUDE embedded_sql_student_decl;
 
 #include <stdio.h>
 #include "db_common.h"
@@ -30,7 +30,7 @@ int main(void)
 
     EXEC SQL SELECT COUNT(*)
         INTO :student_count
-        FROM esql_student;
+        FROM embedded_sql_student;
 
     if (sqlca.sqlcode != 0) {
         print_sql_error("COUNT students");
@@ -43,7 +43,7 @@ int main(void)
 
     EXEC SQL SELECT grade
         INTO :grade
-        FROM esql_student
+        FROM embedded_sql_student
         WHERE student_id = :missing_id;
 
     if (sqlca.sqlcode != 0) {

@@ -13,7 +13,7 @@
 EXEC SQL INCLUDE SQLCA;
 #define ORACA_STORAGE_CLASS extern
 EXEC SQL INCLUDE ORACA;
-EXEC SQL INCLUDE esql_student_decl;
+EXEC SQL INCLUDE embedded_sql_student_decl;
 
 #include <stdio.h>
 #include <string.h>
@@ -26,7 +26,7 @@ int main(void)
         int temp_id = 9002;
         float grade = 1.8f;
 
-        VARCHAR full_name[101];
+        VARCHAR name[101];
         VARCHAR city[51];
         VARCHAR note[101];
 
@@ -40,9 +40,9 @@ int main(void)
 
     connect_or_die();
 
-    EXEC SQL SELECT full_name, city, note
-        INTO :full_name, :city, :note:note_ind
-        FROM esql_student
+    EXEC SQL SELECT name, city, note
+        INTO :name, :city, :note:note_ind
+        FROM embedded_sql_student
         WHERE student_id = :student_id;
 
     if (sqlca.sqlcode != 0) {
@@ -51,11 +51,11 @@ int main(void)
         return 1;
     }
 
-    full_name.arr[full_name.len] = '\0';
+    name.arr[name.len] = '\0';
     city.arr[city.len] = '\0';
 
     printf("student_id = %d\n", student_id);
-    printf("full_name  = %s\n", (char *)full_name.arr);
+    printf("name  = %s\n", (char *)name.arr);
     printf("city       = %s\n", (char *)city.arr);
 
     if (note_ind == -1) {
@@ -74,7 +74,7 @@ int main(void)
     strcpy((char *)ins_note.arr, "Text, ktery bude ignorovan");
     ins_note.len = strlen((char *)ins_note.arr);
 
-    EXEC SQL INSERT INTO esql_student (student_id, full_name, city, grade, note)
+    EXEC SQL INSERT INTO embedded_sql_student (student_id, name, city, grade, note)
         VALUES (:temp_id, :ins_name, :ins_city, :grade, :ins_note:ins_note_ind);
 
     if (sqlca.sqlcode != 0) {
@@ -87,7 +87,7 @@ int main(void)
 
     EXEC SQL SELECT note
         INTO :note:note_ind
-        FROM esql_student
+        FROM embedded_sql_student
         WHERE student_id = :temp_id;
 
     if (sqlca.sqlcode != 0) {

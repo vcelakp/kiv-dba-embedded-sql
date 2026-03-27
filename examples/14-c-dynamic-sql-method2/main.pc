@@ -13,7 +13,7 @@
 EXEC SQL INCLUDE SQLCA;
 #define ORACA_STORAGE_CLASS extern
 EXEC SQL INCLUDE ORACA;
-EXEC SQL INCLUDE esql_student_decl;
+EXEC SQL INCLUDE embedded_sql_student_decl;
 
 #include <stdio.h>
 #include <string.h>
@@ -27,7 +27,7 @@ int main(void)
         int student_id = 9501;
         float grade = 1.7f;
 
-        VARCHAR full_name[101];
+        VARCHAR name[101];
         VARCHAR city[51];
         VARCHAR note[101];
     EXEC SQL END DECLARE SECTION;
@@ -35,8 +35,8 @@ int main(void)
     connect_or_die();
 
     strcpy(sql_stmt,
-           "INSERT INTO esql_student "
-           "(student_id, full_name, city, grade, note) "
+           "INSERT INTO embedded_sql_student "
+           "(student_id, name, city, grade, note) "
            "VALUES (:id, :name, :city, :grade, :note)");
 
     EXEC SQL PREPARE ins_stmt FROM :sql_stmt;
@@ -47,15 +47,15 @@ int main(void)
         return 1;
     }
 
-    strcpy((char *)full_name.arr, "Dynamic Method 2 / row 1");
-    full_name.len = strlen((char *)full_name.arr);
+    strcpy((char *)name.arr, "Dynamic Method 2 / row 1");
+    name.len = strlen((char *)name.arr);
     strcpy((char *)city.arr, "Liberec");
     city.len = strlen((char *)city.arr);
     strcpy((char *)note.arr, "prepared once");
     note.len = strlen((char *)note.arr);
 
     EXEC SQL EXECUTE ins_stmt USING
-        :student_id, :full_name, :city, :grade, :note;
+        :student_id, :name, :city, :grade, :note;
 
     if (sqlca.sqlcode != 0) {
         print_sql_error("EXECUTE ins_stmt #1");
@@ -68,15 +68,15 @@ int main(void)
     student_id = 9502;
     grade = 2.3f;
 
-    strcpy((char *)full_name.arr, "Dynamic Method 2 / row 2");
-    full_name.len = strlen((char *)full_name.arr);
+    strcpy((char *)name.arr, "Dynamic Method 2 / row 2");
+    name.len = strlen((char *)name.arr);
     strcpy((char *)city.arr, "Zlin");
     city.len = strlen((char *)city.arr);
     strcpy((char *)note.arr, "prepared once");
     note.len = strlen((char *)note.arr);
 
     EXEC SQL EXECUTE ins_stmt USING
-        :student_id, :full_name, :city, :grade, :note;
+        :student_id, :name, :city, :grade, :note;
 
     if (sqlca.sqlcode != 0) {
         print_sql_error("EXECUTE ins_stmt #2");

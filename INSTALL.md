@@ -70,7 +70,11 @@ export PATH=$ORACLE_HOME:$ORACLE_HOME/sdk:$PATH
 export LD_LIBRARY_PATH=$ORACLE_HOME:$LD_LIBRARY_PATH
 ```
 
-These variables can also be set in a shell initialization file or in a helper script such as `env.sh`.
+These variables can also be set in a shell initialization file or in a helper script such as `env.sh` using:
+
+```bash
+source env.sh
+```
 
 ## 5. Verify that `proc` works
 
@@ -129,7 +133,7 @@ End of search list.
 # 1 "<stdin>"
 ```
 
-So, list of search paths is as follows:
+So, the correct list of search paths is as follows:
 
 ```text
 /usr/lib/gcc/x86_64-linux-gnu/15/include
@@ -137,7 +141,6 @@ So, list of search paths is as follows:
 /usr/include/x86_64-linux-gnu
 /usr/include
 ```
-
 
 ## 7. Create your own `proc.cfg`
 
@@ -183,8 +186,7 @@ INCLUDE=(/opt/oracle/instantclient_21_12/sdk/include,
 - `SQLCHECK=FULL` includes semantic checking and privilege checking;
 - `LINES=YES` inserts `#line` directives into generated `.c` files so compiler and debugger messages point to the original `.pc` file.
 
-Note: `SQLCHECK=SEMANTICS` is default in examples. 
-
+Note: `SQLCHECK=SEMANTICS` is default in examples.
 
 ## 8. Precompile the first example
 

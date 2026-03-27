@@ -13,14 +13,14 @@
 EXEC SQL INCLUDE SQLCA;
 #define ORACA_STORAGE_CLASS extern
 EXEC SQL INCLUDE ORACA;
-EXEC SQL INCLUDE esql_student_decl;
+EXEC SQL INCLUDE embedded_sql_student_decl;
 
 #include <stdio.h>
 #include "db_common.h"
 
 EXEC SQL DECLARE lock_cursor CURSOR FOR
     SELECT note
-    FROM esql_student
+    FROM embedded_sql_student
     WHERE student_id = 1
     FOR UPDATE OF note;
 
